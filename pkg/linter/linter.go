@@ -24,6 +24,7 @@ import (
 	"github.com/open-policy-agent/opa/topdown/print"
 
 	rbundle "github.com/styrainc/regal/bundle"
+	"github.com/styrainc/regal/internal/compile"
 	rio "github.com/styrainc/regal/internal/io"
 	regalmetrics "github.com/styrainc/regal/internal/metrics"
 	"github.com/styrainc/regal/internal/parse"
@@ -57,6 +58,26 @@ type Linter struct {
 	ignoreFiles          []string
 	metrics              metrics.Metrics
 	profiling            bool
+	compiler             *ast.Compiler
+	compilerInitOnce     sync.Once
+}
+
+func (l *Linter) compilerInit() {
+	modules := make(map[string]*ast.Module)
+
+	regalRules := rio.MustLoadRegalBundleFS(rbundle.Bundle)
+	for _, file := range regalRules.Modules {
+		modules[file.Path] = file.Parsed
+	}
+
+	l.compiler = compile.NewCompilerWithRegalBuiltins().
+		WithUseTypeCheckAnnotations(true)
+
+	l.compiler.Compile(modules)
+
+	if l.compiler.Failed() {
+		panic(l.compiler.Errors)
+	}
 }
 
 //nolint:gochecknoglobals
@@ -568,6 +589,26 @@ func (l *Linter) prepareRegoArgs(query ast.Body) ([]func(*rego.Rego), error) {
 		rego.Function1(builtins.RegalLastMeta, builtins.RegalLast),
 	)
 
+	// TODO: is there a better way to confirm that the first loaded bundle is the regal one?
+	if len(l.ruleBundles) == 1 {
+		if len(l.ruleBundles[0].Modules) > 0 {
+			if strings.HasPrefix(l.ruleBundles[0].Modules[0].Path, "/regal/") {
+				l.compilerInitOnce.Do(l.compilerInit)
+
+				regoArgs = append(regoArgs, rego.Compiler(l.compiler))
+			}
+		}
+	} else if l.ruleBundles != nil {
+		for _, ruleBundle := range l.ruleBundles {
+			var bundleName string
+			if metadataName, ok := ruleBundle.Manifest.Metadata["name"].(string); ok {
+				bundleName = metadataName
+			}
+
+			regoArgs = append(regoArgs, rego.ParsedBundle(bundleName, ruleBundle))
+		}
+	}
+
 	if l.debugMode && l.printHook == nil {
 		l.printHook = topdown.NewPrintHook(os.Stderr)
 	}
@@ -595,17 +636,6 @@ func (l *Linter) prepareRegoArgs(query ast.Body) ([]func(*rego.Rego), error) {
 
 		for path, content := range files {
 			regoArgs = append(regoArgs, rego.Module(path, content))
-		}
-	}
-
-	if l.ruleBundles != nil {
-		for _, ruleBundle := range l.ruleBundles {
-			var bundleName string
-			if metadataName, ok := ruleBundle.Manifest.Metadata["name"].(string); ok {
-				bundleName = metadataName
-			}
-
-			regoArgs = append(regoArgs, rego.ParsedBundle(bundleName, ruleBundle))
 		}
 	}
 
