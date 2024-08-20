@@ -1577,7 +1577,7 @@ func (l *LanguageServer) handleTextDocumentFormatting(
 			li = li.WithUserConfig(*l.loadedConfig)
 		}
 
-		fixReport, err := f.Fix(ctx, &li, memfp)
+		fixReport, err := f.Fix(ctx, li, memfp)
 		if err != nil {
 			return nil, fmt.Errorf("failed to format: %w", err)
 		}

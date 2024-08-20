@@ -42,7 +42,7 @@ deny = true
 	f := NewFixer()
 	f.RegisterFixes(fixes.NewDefaultFixes()...)
 
-	fixReport, err := f.Fix(context.Background(), &l, memfp)
+	fixReport, err := f.Fix(context.Background(), l, memfp)
 	if err != nil {
 		t.Fatalf("failed to fix: %v", err)
 	}
@@ -143,7 +143,7 @@ deny = true
 		},
 	)
 
-	fixReport, err := f.Fix(context.Background(), &l, memfp)
+	fixReport, err := f.Fix(context.Background(), l, memfp)
 	if err != nil {
 		t.Fatalf("failed to fix: %v", err)
 	}

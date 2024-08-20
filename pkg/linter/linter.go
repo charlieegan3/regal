@@ -72,22 +72,22 @@ var (
 )
 
 // NewLinter creates a new Regal linter.
-func NewLinter() Linter {
+func NewLinter() *Linter {
 	regalRules := rio.MustLoadRegalBundleFS(rbundle.Bundle)
 
-	return Linter{
+	return &Linter{
 		ruleBundles: []*bundle.Bundle{&regalRules},
 	}
 }
 
 // NewEmptyLinter creates a linter with no rule bundles.
-func NewEmptyLinter() Linter {
-	return Linter{}
+func NewEmptyLinter() *Linter {
+	return &Linter{}
 }
 
 // WithInputPaths sets the inputPaths to lint. Note that these will be
 // filtered according to the ignore options.
-func (l Linter) WithInputPaths(paths []string) Linter {
+func (l *Linter) WithInputPaths(paths []string) *Linter {
 	l.inputPaths = paths
 
 	return l
@@ -95,21 +95,21 @@ func (l Linter) WithInputPaths(paths []string) Linter {
 
 // WithInputModules sets the input modules to lint. This is used for programmatic
 // access, where you don't necessarily want to lint *files*.
-func (l Linter) WithInputModules(input *rules.Input) Linter {
+func (l *Linter) WithInputModules(input *rules.Input) *Linter {
 	l.inputModules = input
 
 	return l
 }
 
 // WithAddedBundle adds a bundle of rules and data to include in evaluation.
-func (l Linter) WithAddedBundle(b bundle.Bundle) Linter {
+func (l *Linter) WithAddedBundle(b bundle.Bundle) *Linter {
 	l.ruleBundles = append(l.ruleBundles, &b)
 
 	return l
 }
 
 // WithCustomRules adds custom rules for evaluation, from the Rego (and data) files provided at paths.
-func (l Linter) WithCustomRules(paths []string) Linter {
+func (l *Linter) WithCustomRules(paths []string) *Linter {
 	l.customRulesPaths = paths
 
 	return l
@@ -117,7 +117,7 @@ func (l Linter) WithCustomRules(paths []string) Linter {
 
 // WithCustomRulesFromFS adds custom rules for evaluation from a filesystem implementing the fs.FS interface.
 // A root path within the filesystem must also be specified. Note, _test.rego files will be ignored.
-func (l Linter) WithCustomRulesFromFS(f fs.FS, rootPath string) Linter {
+func (l *Linter) WithCustomRulesFromFS(f fs.FS, rootPath string) *Linter {
 	l.customRuleFS = f
 	l.customRuleFSRootPath = rootPath
 
@@ -125,83 +125,83 @@ func (l Linter) WithCustomRulesFromFS(f fs.FS, rootPath string) Linter {
 }
 
 // WithDebugMode enables debug mode.
-func (l Linter) WithDebugMode(debugMode bool) Linter {
+func (l *Linter) WithDebugMode(debugMode bool) *Linter {
 	l.debugMode = debugMode
 
 	return l
 }
 
 // WithUserConfig provides config overrides set by the user.
-func (l Linter) WithUserConfig(cfg config.Config) Linter {
+func (l *Linter) WithUserConfig(cfg config.Config) *Linter {
 	l.userConfig = &cfg
 
 	return l
 }
 
 // WithDisabledRules disables provided rules. This overrides configuration provided in file.
-func (l Linter) WithDisabledRules(disable ...string) Linter {
+func (l *Linter) WithDisabledRules(disable ...string) *Linter {
 	l.disable = disable
 
 	return l
 }
 
 // WithDisableAll disables all rules when set to true. This overrides configuration provided in file.
-func (l Linter) WithDisableAll(disableAll bool) Linter {
+func (l *Linter) WithDisableAll(disableAll bool) *Linter {
 	l.disableAll = disableAll
 
 	return l
 }
 
 // WithDisabledCategories disables provided categories of rules. This overrides configuration provided in file.
-func (l Linter) WithDisabledCategories(disableCategory ...string) Linter {
+func (l *Linter) WithDisabledCategories(disableCategory ...string) *Linter {
 	l.disableCategory = disableCategory
 
 	return l
 }
 
 // WithEnabledRules enables provided rules. This overrides configuration provided in file.
-func (l Linter) WithEnabledRules(enable ...string) Linter {
+func (l *Linter) WithEnabledRules(enable ...string) *Linter {
 	l.enable = enable
 
 	return l
 }
 
 // WithEnableAll enables all rules when set to true. This overrides configuration provided in file.
-func (l Linter) WithEnableAll(enableAll bool) Linter {
+func (l *Linter) WithEnableAll(enableAll bool) *Linter {
 	l.enableAll = enableAll
 
 	return l
 }
 
 // WithEnabledCategories enables provided categories of rules. This overrides configuration provided in file.
-func (l Linter) WithEnabledCategories(enableCategory ...string) Linter {
+func (l *Linter) WithEnabledCategories(enableCategory ...string) *Linter {
 	l.enableCategory = enableCategory
 
 	return l
 }
 
 // WithIgnore excludes files matching patterns. This overrides configuration provided in file.
-func (l Linter) WithIgnore(ignore []string) Linter {
+func (l *Linter) WithIgnore(ignore []string) *Linter {
 	l.ignoreFiles = ignore
 
 	return l
 }
 
 // WithMetrics enables metrics collection.
-func (l Linter) WithMetrics(m metrics.Metrics) Linter {
+func (l *Linter) WithMetrics(m metrics.Metrics) *Linter {
 	l.metrics = m
 
 	return l
 }
 
-func (l Linter) WithPrintHook(printHook print.Hook) Linter {
+func (l *Linter) WithPrintHook(printHook print.Hook) *Linter {
 	l.printHook = printHook
 
 	return l
 }
 
 // WithProfiling enables profiling metrics.
-func (l Linter) WithProfiling(enabled bool) Linter {
+func (l *Linter) WithProfiling(enabled bool) *Linter {
 	l.profiling = enabled
 
 	return l
@@ -210,14 +210,14 @@ func (l Linter) WithProfiling(enabled bool) Linter {
 // WithRootDir sets the root directory for the linter.
 // A door directory or prefix can be use to resolve relative paths
 // referenced in the linter configuration with absolute file paths or URIs.
-func (l Linter) WithRootDir(rootDir string) Linter {
+func (l *Linter) WithRootDir(rootDir string) *Linter {
 	l.rootDir = rootDir
 
 	return l
 }
 
 // Lint runs the linter on provided policies.
-func (l Linter) Lint(ctx context.Context) (report.Report, error) {
+func (l *Linter) Lint(ctx context.Context) (report.Report, error) {
 	l.startTimer(regalmetrics.RegalLint)
 
 	finalReport := report.Report{}
@@ -351,7 +351,7 @@ func (l Linter) Lint(ctx context.Context) (report.Report, error) {
 // DetermineEnabledRules returns the list of rules that are enabled based on the supplied configuration.
 // This makes use of the Rego and Go rule settings to produce a single list of the rules that are to be run
 // on this linter instance.
-func (l Linter) DetermineEnabledRules(ctx context.Context) ([]string, error) {
+func (l *Linter) DetermineEnabledRules(ctx context.Context) ([]string, error) {
 	enabledRules := make([]string, 0)
 
 	goRules, err := l.enabledGoRules()
@@ -401,7 +401,7 @@ data.regal.config.for_rule(cat, rule).level != "ignore"
 	return enabledRules, nil
 }
 
-func (l Linter) lintWithGoRules(ctx context.Context, input rules.Input) (report.Report, error) {
+func (l *Linter) lintWithGoRules(ctx context.Context, input rules.Input) (report.Report, error) {
 	l.startTimer(regalmetrics.RegalLintGo)
 	defer l.stopTimer(regalmetrics.RegalLintGo)
 
@@ -529,7 +529,7 @@ func excludeFile(pattern string, filename string) (bool, error) {
 	return false, nil
 }
 
-func (l Linter) paramsToRulesConfig() map[string]any {
+func (l *Linter) paramsToRulesConfig() map[string]any {
 	params := map[string]any{
 		"disable_all":      l.disableAll,
 		"disable_category": util.NullToEmpty(l.disableCategory),
@@ -550,7 +550,7 @@ func (l Linter) paramsToRulesConfig() map[string]any {
 	}
 }
 
-func (l Linter) prepareRegoArgs(query ast.Body) ([]func(*rego.Rego), error) {
+func (l *Linter) prepareRegoArgs(query ast.Body) ([]func(*rego.Rego), error) {
 	var regoArgs []func(*rego.Rego)
 
 	roots := []string{"eval"}
@@ -656,7 +656,7 @@ func loadModulesFromCustomRuleFS(customRuleFS fs.FS, rootPath string) (map[strin
 	return files, nil
 }
 
-func (l Linter) lintWithRegoRules(ctx context.Context, input rules.Input) (report.Report, error) {
+func (l *Linter) lintWithRegoRules(ctx context.Context, input rules.Input) (report.Report, error) {
 	l.startTimer(regalmetrics.RegalLintRego)
 	defer l.stopTimer(regalmetrics.RegalLintRego)
 
@@ -778,7 +778,7 @@ func (l Linter) lintWithRegoRules(ctx context.Context, input rules.Input) (repor
 	}
 }
 
-func (l Linter) lintWithRegoAggregateRules(
+func (l *Linter) lintWithRegoAggregateRules(
 	ctx context.Context,
 	aggregates map[string][]report.Aggregate,
 	ignoreDirectives map[string]map[string][]string,
@@ -862,7 +862,7 @@ func resultSetToReport(resultSet rego.ResultSet) (report.Report, error) {
 	return r, nil
 }
 
-func (l Linter) combinedConfig() (*config.Config, error) {
+func (l *Linter) combinedConfig() (*config.Config, error) {
 	if l.combinedCfg != nil {
 		return l.combinedCfg, nil
 	}
@@ -892,7 +892,7 @@ func (l Linter) combinedConfig() (*config.Config, error) {
 	return l.combinedCfg, nil
 }
 
-func (l Linter) enabledGoRules() ([]rules.Rule, error) {
+func (l *Linter) enabledGoRules() ([]rules.Rule, error) {
 	var enabledGoRules []rules.Rule
 
 	// enabling/disabling all rules takes precedence and entirely disregards configuration
@@ -956,7 +956,7 @@ func (l Linter) enabledGoRules() ([]rules.Rule, error) {
 	return enabledGoRules, nil
 }
 
-func (l Linter) getBundleByName(name string) (*bundle.Bundle, error) {
+func (l *Linter) getBundleByName(name string) (*bundle.Bundle, error) {
 	if l.ruleBundles == nil {
 		return nil, errors.New("no bundles loaded")
 	}
@@ -972,13 +972,13 @@ func (l Linter) getBundleByName(name string) (*bundle.Bundle, error) {
 	return nil, errors.New("no regal bundle found")
 }
 
-func (l Linter) startTimer(name string) {
+func (l *Linter) startTimer(name string) {
 	if l.metrics != nil {
 		l.metrics.Timer(name).Start()
 	}
 }
 
-func (l Linter) stopTimer(name string) {
+func (l *Linter) stopTimer(name string) {
 	if l.metrics != nil {
 		l.metrics.Timer(name).Stop()
 	}

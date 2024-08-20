@@ -259,7 +259,7 @@ func fix(args []string, params *fixCommandParams) error {
 
 	fileProvider := fileprovider.NewFSFileProvider(ignore, args...)
 
-	fixReport, err := f.Fix(ctx, &l, fileProvider)
+	fixReport, err := f.Fix(ctx, l, fileProvider)
 	if err != nil {
 		return fmt.Errorf("failed to fix: %w", err)
 	}
