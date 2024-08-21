@@ -11,6 +11,9 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"time"
+
+	"github.com/styrainc/regal/internal/compile"
 
 	"github.com/gobwas/glob"
 	"gopkg.in/yaml.v3"
@@ -57,6 +60,7 @@ type Linter struct {
 	ignoreFiles          []string
 	metrics              metrics.Metrics
 	profiling            bool
+	comp                 *ast.Compiler
 }
 
 //nolint:gochecknoglobals
@@ -75,14 +79,35 @@ var (
 func NewLinter() Linter {
 	regalRules := rio.MustLoadRegalBundleFS(rbundle.Bundle)
 
+	modules := make(map[string]*ast.Module)
+
+	for _, mf := range regalRules.Modules {
+		modules[mf.Path] = mf.Parsed
+	}
+
+	comp := compile.NewCompilerWithRegalBuiltins().
+		WithUseTypeCheckAnnotations(true)
+
+	comp.Compile(modules)
+
+	if comp.Failed() {
+		panic("FFFFFF")
+	}
+
 	return Linter{
 		ruleBundles: []*bundle.Bundle{&regalRules},
+		comp:        comp,
 	}
 }
 
 // NewEmptyLinter creates a linter with no rule bundles.
 func NewEmptyLinter() Linter {
-	return Linter{}
+	comp := compile.NewCompilerWithRegalBuiltins().
+		WithUseTypeCheckAnnotations(true)
+
+	return Linter{
+		comp: comp,
+	}
 }
 
 // WithInputPaths sets the inputPaths to lint. Note that these will be
@@ -104,6 +129,18 @@ func (l Linter) WithInputModules(input *rules.Input) Linter {
 // WithAddedBundle adds a bundle of rules and data to include in evaluation.
 func (l Linter) WithAddedBundle(b bundle.Bundle) Linter {
 	l.ruleBundles = append(l.ruleBundles, &b)
+
+	modules := make(map[string]*ast.Module)
+
+	for _, mf := range b.Modules {
+		modules[mf.Path] = mf.Parsed
+	}
+
+	l.comp.Compile(modules)
+
+	if l.comp.Failed() {
+		panic("new bundle failed to compile")
+	}
 
 	return l
 }
@@ -298,10 +335,12 @@ func (l Linter) Lint(ctx context.Context) (report.Report, error) {
 
 	finalReport.Violations = append(finalReport.Violations, goReport.Violations...)
 
+	now := time.Now()
 	regoReport, err := l.lintWithRegoRules(ctx, input)
 	if err != nil {
 		return report.Report{}, fmt.Errorf("failed to lint using Rego rules: %w", err)
 	}
+	fmt.Println("lintWithRegoRules took", time.Since(now))
 
 	finalReport.Violations = append(finalReport.Violations, regoReport.Violations...)
 
@@ -562,6 +601,7 @@ func (l Linter) prepareRegoArgs(query ast.Body) ([]func(*rego.Rego), error) {
 
 	regoArgs = append(regoArgs,
 		rego.Metrics(l.metrics),
+		rego.Compiler(l.comp),
 		rego.ParsedQuery(query),
 		rego.ParsedBundle("regal_eval_params", &dataBundle),
 		rego.Function2(builtins.RegalParseModuleMeta, builtins.RegalParseModule),
@@ -595,17 +635,6 @@ func (l Linter) prepareRegoArgs(query ast.Body) ([]func(*rego.Rego), error) {
 
 		for path, content := range files {
 			regoArgs = append(regoArgs, rego.Module(path, content))
-		}
-	}
-
-	if l.ruleBundles != nil {
-		for _, ruleBundle := range l.ruleBundles {
-			var bundleName string
-			if metadataName, ok := ruleBundle.Manifest.Metadata["name"].(string); ok {
-				bundleName = metadataName
-			}
-
-			regoArgs = append(regoArgs, rego.ParsedBundle(bundleName, ruleBundle))
 		}
 	}
 
