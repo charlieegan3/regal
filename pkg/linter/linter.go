@@ -267,6 +267,7 @@ func (l Linter) Lint(ctx context.Context) (report.Report, error) {
 			"internal": map[string]any{
 				"combined_config": config.ToMap(*conf),
 				"capabilities":    rio.ToMap(config.CapabilitiesForThisVersion()),
+				"root_dir":        l.rootDir,
 			},
 		},
 	}

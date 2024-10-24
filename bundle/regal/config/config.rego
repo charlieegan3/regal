@@ -24,6 +24,13 @@ docs["resolve_url"](url, category) := replace(
 merged_config := data.internal.combined_config
 
 # METADATA
+# description: the rootDir value set on the current linter instance
+# scope: document
+default root_dir := ""
+
+root_dir := data.internal.root_dir
+
+# METADATA
 # description: the resolved capabilities sourced from Regal and user configuration
 capabilities := object.union(merged_config.capabilities, {"special": _special})
 
