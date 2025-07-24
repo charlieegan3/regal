@@ -1781,13 +1781,15 @@ func (l *LanguageServer) handleTextDocumentDefinition(params types.DefinitionPar
 		return nil, fmt.Errorf("failed to get file contents for uri %q", params.TextDocument.URI)
 	}
 
+	// modules are loaded from the cache and keyed by their URI.
 	modules, err := l.getFilteredModules()
 	if err != nil {
 		return nil, fmt.Errorf("failed to filter ignored paths: %w", err)
 	}
 
 	query := oracle.DefinitionQuery{
-		Filename: uri.ToPath(l.clientIdentifier, params.TextDocument.URI),
+		// The value of Filename is used if the defn in the current buffer.
+		Filename: params.TextDocument.URI,
 		Pos:      positionToOffset(contents, params.Position),
 		Modules:  modules,
 		Buffer:   outil.StringToByteSlice(contents),
@@ -1810,7 +1812,8 @@ func (l *LanguageServer) handleTextDocumentDefinition(params types.DefinitionPar
 
 	//nolint:gosec
 	loc := types.Location{
-		URI: uri.FromPath(l.clientIdentifier, definition.Result.File),
+		// this cannot be a path, it might be a module key (URI) or the input URI.
+		URI: definition.Result.File,
 		Range: types.Range{
 			Start: types.Position{Line: uint(definition.Result.Row - 1), Character: uint(definition.Result.Col - 1)},
 			End:   types.Position{Line: uint(definition.Result.Row - 1), Character: uint(definition.Result.Col - 1)},
