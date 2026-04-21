@@ -12,11 +12,28 @@ import data.regal.result as rs
 # description: |
 #   result contains a list of locations. A location is test name, package and
 #   the location (which has start and end char range too).
-result contains object.union(loc, {
+result contains test if {
+	some test in _single_tests
+}
+
+result contains test if {
+	count(_single_tests) > 0
+
+	test := object.union(rs.location(input.package.location), {
+		"package_path": ast.package_path,
+		"package": _package_ref_string,
+		"name": regal.last(ast.package_path),
+		"root": input.regal.file.root,
+		"type": "package",
+	})
+}
+
+_single_tests contains object.union(loc, {
 	"package_path": ast.package_path,
 	"package": _package_ref_string,
 	"name": ast.ref_static_to_string(rule.head.ref),
 	"root": input.regal.file.root,
+	"type": "rule",
 }) if {
 	some rule in ast.tests
 

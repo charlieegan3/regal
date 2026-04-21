@@ -22,12 +22,25 @@ test_2 if true
 		{"regal": {"file": {"root": "/foo"}}},
 	)
 
-	{
+	exp := {
+		{
+			"package_path": ["foo_test"],
+			"package": "data.foo_test",
+			"name": "foo_test",
+			"root": "/foo",
+			"type": "package",
+			"location": {
+				"col": 1, "row": 1, "end": {"col": 8, "row": 1},
+				"file": "file://foo/foo_test.rego",
+				"text": "package foo_test",
+			},
+		},
 		{
 			"package_path": ["foo_test"],
 			"package": "data.foo_test",
 			"name": "test_1",
 			"root": "/foo",
+			"type": "rule",
 			"location": {
 				"col": 1, "row": 3, "end": {"col": 7, "row": 3},
 				"file": "file://foo/foo_test.rego",
@@ -39,6 +52,7 @@ test_2 if true
 			"package": "data.foo_test",
 			"name": "test_2",
 			"root": "/foo",
+			"type": "rule",
 			"location": {
 				"col": 1, "row": 7, "end": {"col": 7, "row": 7},
 				"file": "file://foo/foo_test.rego",
@@ -50,13 +64,16 @@ test_2 if true
 			"package": "data.foo_test",
 			"name": "test_3",
 			"root": "/foo",
+			"type": "rule",
 			"location": {
 				"col": 3, "row": 9, "end": {"col": 9, "row": 9},
 				"file": "file://foo/foo_test.rego",
 				"text": "  test_3 if {",
 			},
 		},
-	} == result
+	}
+
+	exp == result
 }
 
 test_no_test_rules if {
@@ -81,22 +98,42 @@ test_foo if true
 		{"regal": {"file": {"root": "/foo"}}},
 	)
 
-	{{
-		"package_path": ["foo"],
-		"package": "data.foo",
-		"name": "test_foo",
-		"root": "/foo",
-		"location": {
-			"col": 1,
-			"row": 3,
-			"end": {
-				"col": 9,
-				"row": 3,
+	exp := {
+		{
+			"package_path": ["foo"],
+			"package": "data.foo",
+			"name": "foo",
+			"root": "/foo",
+			"type": "package",
+			"location": {
+				"col": 1, "row": 1, "end": {"col": 8, "row": 1},
+				"file": "file:///foo/foo.rego",
+				"text": "package foo",
 			},
-			"file": "file:///foo/foo.rego",
-			"text": "test_foo if true",
 		},
-	}} == result
+		{
+			"package_path": ["foo"],
+			"package": "data.foo",
+			"name": "test_foo",
+			"root": "/foo",
+			"type": "rule",
+			"location": {
+				"col": 1,
+				"row": 3,
+				"end": {
+					"col": 9,
+					"row": 3,
+				},
+				"file": "file:///foo/foo.rego",
+				"text": "test_foo if true",
+			},
+		},
+	}
+
+	print(exp)
+	print(result)
+
+	exp == result
 }
 
 test_funny_test_names_package if {
@@ -116,12 +153,25 @@ foo.bar.test_me.baz if {
 		{"regal": {"file": {"root": "/foo"}}},
 	)
 
-	{
+	exp := {
+		{
+			"package_path": ["foo"],
+			"package": "data.foo",
+			"name": "foo",
+			"root": "/foo",
+			"type": "package",
+			"location": {
+				"col": 1, "row": 1, "end": {"col": 8, "row": 1},
+				"file": "file:///foo/foo.rego",
+				"text": "package foo",
+			},
+		},
 		{
 			"package_path": ["foo"],
 			"package": "data.foo",
 			"name": "foo.bar.test_me",
 			"root": "/foo",
+			"type": "rule",
 			"location": {
 				"col": 1,
 				"row": 3,
@@ -135,6 +185,7 @@ foo.bar.test_me.baz if {
 			"package": "data.foo",
 			"name": "foo.bar.test_me.baz",
 			"root": "/foo",
+			"type": "rule",
 			"location": {
 				"col": 1,
 				"row": 7,
@@ -143,5 +194,10 @@ foo.bar.test_me.baz if {
 				"text": "foo.bar.test_me.baz if {",
 			},
 		},
-	} == result
+	}
+
+	print(result)
+	print(exp)
+
+	exp == result
 }
