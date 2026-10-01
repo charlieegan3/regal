@@ -2,6 +2,7 @@ package encoding
 
 import (
 	"bytes"
+	"encoding/json"
 	"testing"
 
 	"github.com/open-policy-agent/opa/v1/ast"
@@ -225,6 +226,41 @@ func TestEncodeValue(t *testing.T) {
 			got := must.Return(decoder.Decode(buf.Bytes()))(t)
 			if !ast.ValueEqual(test.want, got) {
 				t.Fatalf("expected:\n%v\n got:\n%v", test.want, got)
+			}
+		})
+	}
+}
+
+func TestEncodeValueNonStringKeys(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		value ast.Value
+		want  string
+	}{
+		"number key": {ast.MustParseTerm(`{1: "a"}`).Value, `{"1":"a"}`},
+		"array key":  {ast.MustParseTerm(`{[1, 2]: "a"}`).Value, `{"[1, 2]":"a"}`},
+		"bool key":   {ast.MustParseTerm(`{true: "a"}`).Value, `{"true":"a"}`},
+		"null key":   {ast.MustParseTerm(`{null: "a"}`).Value, `{"null":"a"}`},
+		"set key":    {ast.MustParseTerm(`{{1, 2}: "a"}`).Value, `{"{1, 2}":"a"}`},
+		"object key": {ast.MustParseTerm(`{{"a": 1}: "a"}`).Value, `{"{\"a\": 1}":"a"}`},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			buf := new(bytes.Buffer)
+			if err := OfValue().Encode(buf, test.value); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if !json.Valid(buf.Bytes()) {
+				t.Fatalf("invalid JSON: %s", buf.String())
+			}
+
+			if got := buf.String(); got != test.want {
+				t.Fatalf("expected %s, got %s", test.want, got)
 			}
 		})
 	}

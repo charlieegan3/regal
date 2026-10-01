@@ -1,7 +1,6 @@
 package encoding
 
 import (
-	"encoding"
 	"errors"
 	"io"
 	"log"
@@ -171,12 +170,6 @@ func (m ValueMarshaller) toJSON(value ast.Value, stream *jsoniter.Stream) {
 				switch key := elem.Key().Value.(type) {
 				case ast.String:
 					stream.WriteObjectField(string(key))
-				case encoding.TextAppender:
-					if bs, err := key.AppendText(stream.Buffer()); err == nil {
-						stream.SetBuffer(bs)
-					} else {
-						stream.Error = err
-					}
 				default:
 					stream.WriteObjectField(key.String())
 				}
