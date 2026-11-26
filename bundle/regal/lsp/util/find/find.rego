@@ -106,74 +106,48 @@ import_alias_at_position := imp if {
 
 # METADATA
 # description: |
-#   find the `some`-declared variable at the given position, if any.
+#   find the declaration of the variable at the given position, and the index of its rule, if any. This is the
+#   variable itself where it is declared, or else the nearest declaration before it, or the first one after it.
+# schemas:
+#   - input.params: schema.regal.lsp.textdocumentposition
+declaration_at_position := [ast.declaration_of(rule_index, var), rule_index] if [var, rule_index] := var_at_position
+
+# METADATA
+# description: |
+#   find the `some`-declared variable the variable at the given position is declared by, if any.
 # schemas:
 #   - input.params: schema.regal.lsp.textdocumentposition
 some_var_at_position := [var, rule_index] if {
-	text := input.regal.file.lines[input.params.position.line]
-
-	# `+ 1` converts LSP 0-based char position to word_at's 1-based column
-	word := location.word_at(text, input.params.position.character + 1)
+	[var, rule_index] := declaration_at_position
 
 	some kind in ["some", "somein"]
-	some rule_index, vars in ast.found.vars
-	some var in vars[kind]
-
-	var.value == word.text
-
-	var_pos := range.parse(var.location)
-	input.params.position.line == var_pos.start.line
-	input.params.position.character >= var_pos.start.character
-	input.params.position.character <= var_pos.end.character
+	var in ast.found.vars[rule_index][kind]
 }
 
 # METADATA
 # description: |
-#   find the `every`-declared variable at the given position, if any.
+#   find the `every`-declared variable the variable at the given position is declared by, if any.
 # schemas:
 #   - input.params: schema.regal.lsp.textdocumentposition
 every_var_at_position := [var, every_terms] if {
-	text := input.regal.file.lines[input.params.position.line]
+	[var, rule_index] := declaration_at_position
 
-	# `+ 1` converts LSP 0-based char position to word_at's 1-based column
-	word := location.word_at(text, input.params.position.character + 1)
-
-	some every_blocks in ast.found.every
-	some every_terms in every_blocks
+	some every_terms in ast.found.every[rule_index]
 	some kind in ["key", "value"]
-
-	var := every_terms[kind]
-	var.type == "var"
-	var.value == word.text
-
-	var_pos := range.parse(var.location)
-	input.params.position.line == var_pos.start.line
-	input.params.position.character >= var_pos.start.character
-	input.params.position.character <= var_pos.end.character
+	var == every_terms[kind]
 }
 
 # METADATA
 # description: |
-#   find the variable declared inside a comprehension at the
-#   given position, if any.
+#   find the variable declared inside a comprehension that the variable at the given position is declared by,
+#   if any.
 # schemas:
 #   - input.params: schema.regal.lsp.textdocumentposition
 comprehension_var_at_position := [var, comp] if {
-	text := input.regal.file.lines[input.params.position.line]
+	[var, rule_index] := declaration_at_position
 
-	# `+ 1` converts LSP 0-based char position to word_at's 1-based column
-	word := location.word_at(text, input.params.position.character + 1)
-
-	some comps in ast.found.comprehensions
-	some comp in comps
-	some var in _comp_declared_vars(comp.value.body)
-
-	var.value == word.text
-
-	var_pos := range.parse(var.location)
-	input.params.position.line == var_pos.start.line
-	input.params.position.character >= var_pos.start.character
-	input.params.position.character <= var_pos.end.character
+	some comp in ast.found.comprehensions[rule_index]
+	var in _comp_declared_vars(comp.value.body)
 }
 
 _comp_declared_vars(body) := [v |

@@ -168,3 +168,43 @@ test_logical_operand_locations if {
 test_logical_operand_locations_none_found if {
 	ast.logical_operand_locations == {} with input as ast.policy(`r if input.a == 1`)
 }
+
+# "use" and "declared" are row:col, and rows count from the package line
+test_declaration_of[name] if {
+	some name, tc in {
+		"declared after": {
+			"snippet": `r := x if {
+	x := input.a
+}`,
+			"use": "3:6",
+			"declared": "4:2",
+		},
+		"nearest before": {
+			"snippet": `r if {
+	_ = [x | some x in input.a; x > 1]
+	_ = [x | some x in input.b; x > 2]
+}`,
+			"use": "5:30",
+			"declared": "5:16",
+		},
+		"not one that is out of scope": {
+			"snippet": `r if {
+	x := 5
+	_ = [x | some x in input.a]
+	x > 0
+}`,
+			"use": "6:2",
+			"declared": "4:2",
+		},
+	}
+
+	module := ast.policy(tc.snippet)
+
+	walk(module.rules[0], [_, var])
+	var.type == "var"
+	startswith(var.location, $"{tc.use}:")
+
+	decl := ast.declaration_of(0, var) with input as module
+
+	startswith(decl.location, $"{tc.declared}:")
+}

@@ -43,7 +43,7 @@ r := result if {
 	comp.type == "objectcomprehension"
 }
 
-test_comprehension_var_at_position_no_match_on_output if {
+test_comprehension_var_at_position_from_output if {
 	policy := `package p
 
 r := result if {
@@ -54,10 +54,13 @@ r := result if {
 
 	module := regal.parse_module("p.rego", policy)
 
-	# cursor on the output 'x' (line 3, col 12) — that's a reference not a declaration
-	not find.comprehension_var_at_position
+	# cursor on the output 'x' (line 3, col 12), which is a use of the variable declared on line 4
+	[var, _] := find.comprehension_var_at_position
 		with data.workspace.parsed["file:///p.rego"] as module
 		with input.params.textDocument.uri as "file:///p.rego"
 		with input.params.position as {"line": 3, "character": 12}
 		with input.regal as module.regal
+
+	var.value == "x"
+	var.location == "5:8:5:9"
 }

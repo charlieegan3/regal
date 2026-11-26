@@ -390,3 +390,34 @@ _declared_vars(terms) := array.flatten([_declared_by(symbol) | some symbol in te
 _declared_by(symbol) := [symbol] if symbol.type != "call"
 
 _declared_by(symbol) := array.slice(symbol.value, 1, count(symbol.value) - 1) if symbol.type == "call"
+
+# METADATA
+# description: |
+#   the declaration of the variable in the rule at the given index. This is the variable itself where it is
+#   declared, or else the nearest declaration before it, or the first one after it.
+declaration_of(rule_index, var) := sort(candidates)[0][1] if {
+	candidates := [[_rank(decl, var), decl] |
+		some decl in declarations_in_scope(_rules[rule_index], var)
+	]
+}
+
+_rank(decl, var) := [-1] if decl == var
+
+_rank(decl, var) := [0, 0 - pos.row, 0 - pos.col] if {
+	decl != var
+	pos := util.to_location_object(decl.location)
+	_starts_before(pos, util.to_location_object(var.location))
+}
+
+_rank(decl, var) := [1, pos.row, pos.col] if {
+	decl != var
+	pos := util.to_location_object(decl.location)
+	not _starts_before(pos, util.to_location_object(var.location))
+}
+
+_starts_before(a, b) if a.row < b.row
+
+_starts_before(a, b) if {
+	a.row == b.row
+	a.col < b.col
+}
